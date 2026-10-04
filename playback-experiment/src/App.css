@@ -19,7 +19,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -289,6 +290,35 @@ video {
   width: auto;
   margin: 3px 0 0 0;
   flex-shrink: 0;
+}
+
+/* -------------------- */
+/* Questionnaire        */
+/* -------------------- */
+
+.questionnaire-prompt {
+  display: block;
+  margin-bottom: 10px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.questionnaire-answer {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background: white;
+  color: #222;
+  font-size: 1rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.questionnaire-answer:focus {
+  outline: 2px solid #777;
+  outline-offset: 1px;
 }
 
 /* -------------------- */
