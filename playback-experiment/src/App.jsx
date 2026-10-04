@@ -1,6 +1,37 @@
 import { useRef, useState } from "react";
 import "./App.css";
 
+// Number of comprehension questions per video (used for the CSV columns).
+const QUIZ_QUESTION_COUNT = 10;
+
+// Post-experiment questionnaire (free-text answers, saved to the results CSV).
+const QUESTIONNAIRE = [
+  {
+    id: "playbackSpeedFocus",
+    title: "1. Playback speed & focus",
+    prompt:
+      "How did the two playback speeds (1.0x and 1.5x) feel to you? Did one speed make it easier or harder to maintain focus?",
+  },
+  {
+    id: "mindWanderingTriggers",
+    title: "2. Mind-wandering triggers",
+    prompt:
+      "When you caught your mind wandering, what do you feel triggered it? (e.g., video speed, topic interest, external distractions, internal thoughts)",
+  },
+  {
+    id: "popupProbes",
+    title: "3. Pop-up probes",
+    prompt:
+      "Did the on-screen pop-up questions disrupt your concentration or alter how you watched the videos?",
+  },
+  {
+    id: "studyConstraints",
+    title: "4. Study constraints",
+    prompt:
+      "How did the requirement to watch without pausing or taking notes affect how you tried to pay attention?",
+  },
+];
+
 function App() {
   const [participantId, setParticipantId] = useState("");
   const [group, setGroup] = useState("group1");
@@ -21,6 +52,9 @@ function App() {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
+
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState({});
 
   const [finished, setFinished] = useState(false);
 
@@ -116,6 +150,61 @@ function App() {
       ],
       correctAnswer: 0,
     },
+    {
+      question:
+        "Where were the participants for the study originally recruited?",
+      options: [
+        "Cambridge & Boston",
+        "Boston & New York City",
+        "Lowell & Springfield",
+        "Springfield & Boston",
+      ],
+      correctAnswer: 0,
+    },
+    {
+      question:
+        "What is one reason that studies like this are rare?",
+      options: [
+        "No public interest in studies that follow one person for their lifetime",
+        "Participants not willing to participate in a study for their lifetime",
+        "Funding for the research dries up",
+        "Researchers with the necessary expertise are unavailable",
+      ],
+      correctAnswer: 2,
+    },
+    {
+      question:
+        "Which decade did the study begin?",
+      options: [
+        "1920s",
+        "1930s",
+        "1940s",
+        "1950s",
+      ],
+      correctAnswer: 1,
+    },
+    {
+      question:
+        "Is the study qualitative or quantitative or mixed methods?",
+      options: [
+        "Qualitative",
+        "Quantitative",
+        "Mixed Methods",
+        "None of the Above",
+      ],
+      correctAnswer: 2,
+    },
+    {
+      question:
+        "What year was this video posted?",
+      options: [
+        "2010",
+        "2015",
+        "2020",
+        "2025",
+      ],
+      correctAnswer: 1,
+    },
   ];
 
   const video2Questions = [
@@ -170,6 +259,61 @@ function App() {
         "People must completely love themselves before they can love others",
         "Different internal perspectives can be listened to with honesty, boundaries, kindness, and gratitude",
         "Negative parts of the self should be replaced with more positive ones",
+      ],
+      correctAnswer: 2,
+    },
+    {
+      question:
+        "How did Faith realize that her observational skill\u2014noticing body language, micro-expressions, and tonal shifts\u2014was actually a symptom of complex post-traumatic stress?",
+      options: [
+        "A therapist diagnosed her during a hypnotherapy session.",
+        "Her supervisor noticed her detailed meeting notes during a temp job.",
+        "She analyzed her own hypervigilance while shadowing research subjects.",
+        "She realized it after attempting the live honeybee acupuncture treatment.",
+      ],
+      correctAnswer: 1,
+    },
+    {
+      question:
+        "During her interaction with the vaccine-hesitant research participant, what specific technique enabled Faith to access \"unconditional welcome\" when standard researcher neutrality failed?",
+      options: [
+        "Offering a compassionate verbal validation before asking about her childhood.",
+        "Visualizing an inflating soap bubble around both of them using New Age techniques.",
+        "Silencing her internal judgment by ignoring the woman's cigarette ash and fries.",
+        "Reciting her morning focus group opening script out loud.",
+      ],
+      correctAnswer: 1,
+    },
+    {
+      question:
+        "According to the transcript, how does Faith's closing statement to her internal \"selves\" differ from how she closes an actual focus group?",
+      options: [
+        "She offers parking validation and cash signatures to her focus group, but expresses love and gratitude to her internal selves.",
+        "She asks the focus group for feedback, but sets strict boundary agreements with her internal selves.",
+        "She closes the focus group with silence, but uses a New Age breathing technique with her internal selves.",
+        "She thanks the focus group for being present, but reminds her internal selves to make reasonable requests.",
+      ],
+      correctAnswer: 0,
+    },
+    {
+      question:
+        "Which treatment or therapy did Karen Faith explicitly state she passed on (did not try)?",
+      options: [
+        "Soul retrieval",
+        "Live honeybee acupuncture",
+        "Drinking special tea with a shaman",
+        "Hypnotherapy",
+      ],
+      correctAnswer: 1,
+    },
+    {
+      question:
+        "According to Faith, how should someone understand the intention behind their negative or \"whiny, shamey\" inner voice?",
+      options: [
+        "It is an irrational cognitive distortion that needs to be systematically silenced and replaced.",
+        "It is a symptom of trauma that functions solely to sabotage personal progress.",
+        "It is trying to help in its own weird way and can reveal what it needs to feel better if accepted in the moment.",
+        "It represents a fundamental flaw in character that can only be resolved through professional therapy.",
       ],
       correctAnswer: 2,
     },
@@ -333,11 +477,12 @@ function App() {
       videoTitle: currentCondition.title,
       speed: currentCondition.speed,
       score,
-      q1Answer: answerIndexToLetter(quizAnswers[0]),
-      q2Answer: answerIndexToLetter(quizAnswers[1]),
-      q3Answer: answerIndexToLetter(quizAnswers[2]),
-      q4Answer: answerIndexToLetter(quizAnswers[3]),
-      q5Answer: answerIndexToLetter(quizAnswers[4]),
+      ...Object.fromEntries(
+        currentQuestions.map((_, index) => [
+          `q${index + 1}Answer`,
+          answerIndexToLetter(quizAnswers[index]),
+        ])
+      ),
     };
 
     setResults((previous) => [...previous, quizResult]);
@@ -352,7 +497,7 @@ function App() {
 
     if (isLastCondition) {
       setShowQuiz(false);
-      setFinished(true);
+      setShowQuestionnaire(true);
       return;
     }
 
@@ -370,6 +515,27 @@ function App() {
     setCurrentPromptIndex(null);
   }
 
+  function submitQuestionnaire() {
+    const questionnaireResult = {
+      type: "questionnaire",
+      participantId,
+      group,
+      ...Object.fromEntries(
+        QUESTIONNAIRE.map((item) => [
+          item.id,
+          (questionnaireAnswers[item.id] || "").trim(),
+        ])
+      ),
+    };
+
+    setResults((previous) => [...previous, questionnaireResult]);
+
+    console.log("Questionnaire result:", questionnaireResult);
+
+    setShowQuestionnaire(false);
+    setFinished(true);
+  }
+
   function escapeCsvValue(value) {
     if (value === null || value === undefined) {
       return "";
@@ -380,7 +546,8 @@ function App() {
     if (
       stringValue.includes(",") ||
       stringValue.includes('"') ||
-      stringValue.includes("\n")
+      stringValue.includes("\n") ||
+      stringValue.includes("\r")
     ) {
       return `"${stringValue.replace(/"/g, '""')}"`;
     }
@@ -416,11 +583,12 @@ function App() {
       "related",
 
       "score",
-      "q1Answer",
-      "q2Answer",
-      "q3Answer",
-      "q4Answer",
-      "q5Answer",
+      ...Array.from(
+        { length: QUIZ_QUESTION_COUNT },
+        (_, index) => `q${index + 1}Answer`
+      ),
+
+      ...QUESTIONNAIRE.map((item) => item.id),
     ];
 
     const header = columns.join(",");
@@ -463,6 +631,59 @@ function App() {
 
           <button onClick={downloadResults}>
             Download results
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (started && showQuestionnaire) {
+    const allAnswered = QUESTIONNAIRE.every(
+      (item) => (questionnaireAnswers[item.id] || "").trim() !== ""
+    );
+
+    return (
+      <div className="app">
+        <div className="quiz-container">
+          <h1>Your Experience</h1>
+
+          <p>
+            Thank you for completing both video sessions! Please
+            take a moment to share your experience below. Your
+            honest feedback is invaluable for our research.
+          </p>
+
+          {QUESTIONNAIRE.map((item) => (
+            <div key={item.id} className="quiz-question">
+              <h3>{item.title}</h3>
+
+              <label
+                htmlFor={`questionnaire-${item.id}`}
+                className="questionnaire-prompt"
+              >
+                {item.prompt}
+              </label>
+
+              <textarea
+                id={`questionnaire-${item.id}`}
+                className="questionnaire-answer"
+                rows={4}
+                value={questionnaireAnswers[item.id] || ""}
+                onChange={(e) =>
+                  setQuestionnaireAnswers((previous) => ({
+                    ...previous,
+                    [item.id]: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          ))}
+
+          <button
+            onClick={submitQuestionnaire}
+            disabled={!allAnswered}
+          >
+            Submit and finish
           </button>
         </div>
       </div>
@@ -538,7 +759,7 @@ function App() {
 
               <button onClick={continueAfterQuiz}>
                 {conditionIndex === 1
-                  ? "Finish experiment"
+                  ? "Continue to final questions"
                   : "Continue to next video"}
               </button>
             </div>
