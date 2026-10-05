@@ -322,6 +322,91 @@ video {
 }
 
 /* -------------------- */
+/* Custom video controls */
+/* -------------------- */
+
+video {
+  cursor: pointer;
+}
+
+.video-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 900px;
+  margin: -8px auto 20px;
+}
+
+.video-controls .play-button {
+  width: 90px;
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.progress-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: #ccc;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #555;
+  transition: width 0.25s linear;
+}
+
+.video-clock {
+  flex-shrink: 0;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  color: #555;
+}
+
+.volume-control input {
+  width: 90px;
+  margin-top: 0;
+  padding: 0;
+  border: none;
+}
+
+/* -------------------- */
+/* Test mode            */
+/* -------------------- */
+
+.test-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  border: 2px dashed #c0392b;
+  border-radius: 6px;
+  color: #c0392b;
+}
+
+.test-mode-bar button {
+  width: auto;
+  margin-top: 0;
+}
+
+.card .test-mode-note {
+  color: #c0392b;
+  font-weight: bold;
+}
+
+/* -------------------- */
 /* Responsive layout    */
 /* -------------------- */
 

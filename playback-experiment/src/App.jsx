@@ -4,6 +4,12 @@ import "./App.css";
 // Number of comprehension questions per video (used for the CSV columns).
 const QUIZ_QUESTION_COUNT = 10;
 
+// Test mode: open the app with ?test in the URL
+// (e.g. http://localhost:5173/?test) to get a "Skip to next probe"
+// button. Dragging the progress bar is still blocked, so the button
+// is the only way to skip. Participants never see this.
+const TEST_MODE = new URLSearchParams(window.location.search).has("test");
+
 // Post-experiment questionnaire (free-text answers, saved to the results CSV).
 const QUESTIONNAIRE = [
   {
@@ -58,7 +64,28 @@ function App() {
 
   const [finished, setFinished] = useState(false);
 
+  // State for the custom video controls (the browser's own controls are
+  // hidden so participants can't drag the progress bar).
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [videoTime, setVideoTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+
   const videoRef = useRef(null);
+
+  // Furthest point the participant has legitimately watched to.
+  // Used to stop them seeking forward (which would skip probes)
+  // or backward (which would let them re-watch).
+  const maxWatchedTimeRef = useRef(0);
+
+  // Probes already shown for the current video. Kept in a ref (not just
+  // state) because the browser can fire several timeupdate events before
+  // React re-renders, which previously recorded the same probe twice.
+  const triggeredRef = useRef(new Set());
+  const promptOpenRef = useRef(false);
+
+  // Test mode: true after "Skip" is clicked, until that probe is answered.
+  const [skipPending, setSkipPending] = useState(false);
 
   const conditions = {
     group1: [
@@ -358,6 +385,14 @@ function App() {
     if (!video) return;
 
     video.playbackRate = currentCondition.speed;
+    video.volume = volume;
+    maxWatchedTimeRef.current = 0;
+    setVideoDuration(video.duration);
+    setVideoTime(0);
+    setIsPlaying(false);
+    triggeredRef.current = new Set();
+    promptOpenRef.current = false;
+    setSkipPending(false);
 
     const times = generatePromptTimes(video.duration);
 
@@ -393,19 +428,33 @@ function App() {
   function handleTimeUpdate() {
     const video = videoRef.current;
 
-    if (!video || showPrompt) return;
+    if (!video) return;
+
+    setVideoTime(video.currentTime);
+
+    // Never trigger probes in the middle of a seek.
+    if (video.seeking) return;
+
+    if (!video.seeking) {
+      maxWatchedTimeRef.current = Math.max(
+        maxWatchedTimeRef.current,
+        video.currentTime
+      );
+    }
+
+    if (promptOpenRef.current) return;
 
     for (let index = 0; index < promptTimes.length; index++) {
       const promptTime = promptTimes[index];
-      const alreadyTriggered = triggeredPrompts.includes(index);
+      const alreadyTriggered = triggeredRef.current.has(index);
 
       if (!alreadyTriggered && video.currentTime >= promptTime) {
         video.pause();
 
-        setTriggeredPrompts((previous) => [
-          ...previous,
-          index,
-        ]);
+        triggeredRef.current.add(index);
+        promptOpenRef.current = true;
+
+        setTriggeredPrompts([...triggeredRef.current]);
 
         setCurrentPromptIndex(index);
         setShowPrompt(true);
@@ -442,14 +491,110 @@ function App() {
     setPromptAnswer(null);
     setShowPrompt(false);
     setCurrentPromptIndex(null);
+    promptOpenRef.current = false;
+    setSkipPending(false);
+
+    // If the video has already reached the end, go to the quiz
+    // instead of calling play(), which would restart the video
+    // from the beginning.
+    if (video.ended) {
+      goToQuiz();
+      return;
+    }
 
     video.play();
   }
 
-  function handleVideoEnded() {
+  function goToQuiz() {
     setShowQuiz(true);
     setQuizAnswers({});
     setQuizSubmitted(false);
+  }
+
+  function handleVideoEnded() {
+    // A probe is still waiting for an answer: let the participant
+    // answer it first. savePromptResponse() then moves on to the quiz.
+    if (promptOpenRef.current) return;
+
+    goToQuiz();
+  }
+
+  function handleSeeking() {
+    const video = videoRef.current;
+
+    if (!video) return;
+
+    const allowedTime = maxWatchedTimeRef.current;
+
+    // Small tolerance so normal playback isn't affected.
+    if (Math.abs(video.currentTime - allowedTime) > 1) {
+      video.currentTime = allowedTime;
+    }
+  }
+
+  // Test mode only: jump to 2 seconds before the next probe
+  // (or near the end once all probes are done).
+  function skipToNextProbe() {
+    const video = videoRef.current;
+
+    if (!video || skipPending || promptOpenRef.current) return;
+
+    setSkipPending(true);
+
+    const nextIndex = promptTimes.findIndex(
+      (_, index) => !triggeredRef.current.has(index)
+    );
+
+    const target =
+      nextIndex === -1
+        ? video.duration - 2
+        : promptTimes[nextIndex] - 2;
+
+    const newTime = Math.max(target, video.currentTime);
+
+    // Allow this jump past the seek block before moving the video.
+    maxWatchedTimeRef.current = newTime;
+    video.currentTime = newTime;
+    video.play();
+  }
+
+  function togglePlay() {
+    const video = videoRef.current;
+
+    if (!video || promptOpenRef.current) return;
+
+    if (video.paused) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  }
+
+  function handleVolumeChange(e) {
+    const newVolume = Number(e.target.value);
+
+    setVolume(newVolume);
+
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+    }
+  }
+
+  function formatClock(seconds) {
+    if (!Number.isFinite(seconds)) return "0:00";
+
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+
+    return `${minutes}:${String(secs).padStart(2, "0")}`;
+  }
+
+  function handleRateChange() {
+    const video = videoRef.current;
+
+    if (video && video.playbackRate !== currentCondition.speed) {
+      video.playbackRate = currentCondition.speed;
+    }
   }
 
   function handleQuizAnswer(questionIndex, optionIndex) {
@@ -510,6 +655,9 @@ function App() {
 
     setPromptTimes([]);
     setTriggeredPrompts([]);
+    triggeredRef.current = new Set();
+    promptOpenRef.current = false;
+    setSkipPending(false);
     setPromptAnswer(null);
     setShowPrompt(false);
     setCurrentPromptIndex(null);
@@ -818,11 +966,73 @@ function App() {
             key={`${currentCondition.id}-${conditionIndex}`}
             ref={videoRef}
             src={currentCondition.video}
-            controls
+            disablePictureInPicture
+            onContextMenu={(e) => e.preventDefault()}
+            onClick={togglePlay}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
             onLoadedMetadata={handleLoadedMetadata}
             onTimeUpdate={handleTimeUpdate}
+            onSeeking={handleSeeking}
+            onRateChange={handleRateChange}
             onEnded={handleVideoEnded}
           />
+
+          <div className="video-controls">
+            <button
+              className="play-button"
+              onClick={togglePlay}
+              disabled={showPrompt}
+            >
+              {isPlaying ? "Pause" : "Play"}
+            </button>
+
+            {/* Display only: participants can't click or drag this. */}
+            <div className="progress-track" aria-hidden="true">
+              <div
+                className="progress-fill"
+                style={{
+                  width: videoDuration
+                    ? `${(videoTime / videoDuration) * 100}%`
+                    : "0%",
+                }}
+              />
+            </div>
+
+            <span className="video-clock">
+              {formatClock(videoTime)} / {formatClock(videoDuration)}
+            </span>
+
+            <label className="volume-control">
+              Volume
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={volume}
+                onChange={handleVolumeChange}
+              />
+            </label>
+          </div>
+
+          {TEST_MODE && (
+            <div className="test-mode-bar">
+              <strong>TEST MODE</strong>
+              <button
+                onClick={skipToNextProbe}
+                disabled={skipPending || showPrompt}
+              >
+                {triggeredPrompts.length < promptTimes.length
+                  ? skipPending
+                    ? "Waiting for probe..."
+                    : `Skip to probe ${triggeredPrompts.length + 1}`
+                  : skipPending
+                    ? "Skipping to end..."
+                    : "Skip to end of video"}
+              </button>
+            </div>
+          )}
 
           {showPrompt && (
             <div className="prompt-overlay">
@@ -900,6 +1110,12 @@ function App() {
     <div className="app">
       <div className="card">
         <h1>Playback Speed Experiment</h1>
+
+        {TEST_MODE && (
+          <p className="test-mode-note">
+            Test mode is on. Don't use this for real participants.
+          </p>
+        )}
 
         <label>
           Participant ID
