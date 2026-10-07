@@ -558,15 +558,15 @@ function App() {
     video.play();
   }
 
-  function togglePlay() {
+  function startVideo() {
     const video = videoRef.current;
 
     if (!video || promptOpenRef.current) return;
 
+    // Participants may start/resume the video,
+    // but this function can never pause it.
     if (video.paused) {
       video.play();
-    } else {
-      video.pause();
     }
   }
 
@@ -968,7 +968,7 @@ function App() {
             src={currentCondition.video}
             disablePictureInPicture
             onContextMenu={(e) => e.preventDefault()}
-            onClick={togglePlay}
+            onClick={startVideo}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
             onLoadedMetadata={handleLoadedMetadata}
@@ -981,10 +981,10 @@ function App() {
           <div className="video-controls">
             <button
               className="play-button"
-              onClick={togglePlay}
-              disabled={showPrompt}
+              onClick={startVideo}
+              disabled={showPrompt || isPlaying}
             >
-              {isPlaying ? "Pause" : "Play"}
+              {isPlaying ? "Playing" : "Play"}
             </button>
 
             {/* Display only: participants can't click or drag this. */}
