@@ -91,13 +91,13 @@ function App() {
     group1: [
       {
         id: "video2",
-        video: "/videos/video2.mp4",
+        video: "https://bsqbrcgyaigb6xtm.public.blob.vercel-storage.com/video2.mp4",
         speed: 1.5,
         title: "How to Talk to the Worst Parts of Yourself",
       },
       {
         id: "video1",
-        video: "/videos/video1.mp4",
+        video: "https://bsqbrcgyaigb6xtm.public.blob.vercel-storage.com/video1.mp4",
         speed: 1.0,
         title: "What Makes a Good Life?",
       },
@@ -106,13 +106,13 @@ function App() {
     group2: [
       {
         id: "video2",
-        video: "/videos/video2.mp4",
+        video: "https://bsqbrcgyaigb6xtm.public.blob.vercel-storage.com/video2.mp4",
         speed: 1.0,
         title: "How to Talk to the Worst Parts of Yourself",
       },
       {
         id: "video1",
-        video: "/videos/video1.mp4",
+        video: "https://bsqbrcgyaigb6xtm.public.blob.vercel-storage.com/video1.mp4",
         speed: 1.5,
         title: "What Makes a Good Life?",
       },
