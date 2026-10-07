@@ -15,6 +15,9 @@ The application is a React/Vite web application for a two-condition video experi
 - exports the recorded data as a CSV file.
 - Asks four-question post-experiment feedback questions.
 
+## Online Version 
+The application is currently hosted online on this domain: https://compsci-705-project.vercel.app/
+
 ## System Requirements
 
 - Windows 10/11, macOS, or equivalent desktop operating system
@@ -64,6 +67,8 @@ After downloading the videos, place them in:
 public/videos/
 ```
 
+## The path to the videos
+If you run the app locally you have to change the path to the videos in App.jsx to the local folder: "videos/video1.mp4" and "videos/video2.mp4"
 
 ## Install
 
