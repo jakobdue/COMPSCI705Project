@@ -11,8 +11,9 @@ The application is a React/Vite web application for a two-condition video experi
 - uses two counterbalanced groups;
 - pauses each video four times for randomized mind-wandering prompts;
 - asks whether reported mind-wandering was related or unrelated to the lecture;
-- presents a five-question comprehension quiz after each video; and
+- presents a 10-question comprehension quiz after each video; and
 - exports the recorded data as a CSV file.
+- Asks four-question post-experiment feedback questions.
 
 ## System Requirements
 
@@ -123,7 +124,7 @@ npm run preview
    - **Yes -> Related to the lecture** - the response is saved and the video resumes.
    - **Yes -> Unrelated to the lecture** - the response is saved and the video resumes.
 8. Move close to the end of the video and allow it to finish.
-9. Complete the five-question quiz.
+9. Complete the 10-question quiz.
 10. Continue to the second video and repeat.
 11. Finish the experiment.
 12. Click **Download results**.
